@@ -1,0 +1,284 @@
+                        * fragments of MIKBUG 0.9
+                        * cf. https://tms9918.hatenablog.com/entry/2023/03/27/212510
+   f000                 ACIACS  EQU $f000
+   f001                 ACIADA  EQU $f001
+   f003                 STRAPS  EQU $f003
+   00f1                 VAR EQU $00F1
+                        ;
+                        ;   OPT MEMORY
+   0300                     ORG $0300
+   0300   7e 03 c5          JMP START
+                        
+                        ;   L COMMAND
+   0303                 LOAD    EQU *
+   0303   86 0d             LDAA    #$0D
+   0305   8d 69             BSR OUTCH
+   0307   01                NOP
+   0308   86 0a             LDAA    #$0A
+   030a   8d 64             BSR OUTCH
+                        ;
+                        ;   CHECK TYPE
+   030c   8d 65         LOAD3   BSR INCH
+   030e   81 53             CMPA    #'S'
+   0310   26 fa             BNE LOAD3   ;1ST CHAR NOT (S)
+   0312   8d 5f             BSR INCH    ;READ CHAR
+   0314   81 39             CMPA    #'9'
+   0316   27 25             BEQ LOAD21  ;START ADDRESS
+   0318   81 31             CMPA    #'1'
+   031a   26 f0             BNE LOAD3   ;2ND CHAR NOT (1)
+   031c   7f 00 fb          CLR CKSM    ;ZERO CHECKSUM
+   031f   8d 2d             BSR BYTE    ;READ BYTE
+   0321   80 02             SUBA    #2
+   0323   b7 00 fc          STAA    BYTECT  ;BYTE COUNT
+                        ;
+                        ;   BUILD ADDRESS
+   0326   8d 18             BSR BADDR
+                        ;
+                        ;   STORE DATA
+   0328   8d 24         LOAD11  BSR BYTE
+   032a   7a 00 fc          DEC BYTECT
+   032d   27 05             BEQ LOAD15  ;ZERO BYTE COUNT
+   032f   a7 00             STAA    X   ;STORE DATA
+   0331   08                INX
+   0332   20 f4             BRA LOAD11
+                        ;
+                        ;   ZERO BYTE COUNT
+   0334   7c 00 fb      LOAD15  INC CKSM
+   0337   27 d3             BEQ LOAD3
+   0339   86 3f         LOAD19  LDAA    #'?'    ;PRINT QUESTION MARK
+   033b   8d 33             BSR OUTCH
+   033d                 LOAD21  EQU *
+   033d   7e 03 d4      C1  JMP CONTRL
+                        
+                        * BUILD ADDRESS
+                        ;   CHANGE MENORY (M AAAA DD NN)
+   0340   8d 0c         BADDR  BSR    BYTE     ;READ 2 FRAMES
+   0342   b7 00 fd             STA A  XHI
+   0345   8d 07                BSR    BYTE
+   0347   b7 00 fe             STA A  XLOW
+   034a   fe 00 fd             LDX    XHI      ;(X) ADDRESS WE BUILT
+   034d   39                   RTS
+                        
+                        * INPUT BYTE (TWO FRAMES)
+   034e   8d 4f         BYTE   BSR    INHEX    ;GET HEX CHAR
+   0350   48                   ASL A
+   0351   48                   ASL A
+   0352   48                   ASL A
+   0353   48                   ASL A
+   0354   16                   TAB
+   0355   8d 48                BSR    INHEX
+   0357   84 0f                AND A  #$0F     ;MASK TO 4 BITS
+   0359   1b                   ABA
+   035a   16                   TAB
+   035b   fb 00 fb             ADD B  CKSM
+   035e   f7 00 fb             STA B  CKSM
+   0361   39                   RTS
+                        
+   0362   44            OUTHL   LSRA    ;OUT HEX LEFT BCD DIGIT
+   0363   44                LSRA
+   0364   44                LSRA
+   0365   44                LSRA
+   0366   84 0f         OUTHR   ANDA    #$F ;OUT HEX RIGHT BCD DIGIT
+   0368   8b 30             ADDA    #$30
+   036a   81 39             CMPA    #$39
+   036c   23 02             BLS OUTCH
+   036e   8b 07             ADDA    #$7
+                        ;
+                        ;   OUTPUT ONE CHAR
+   0370   7e 04 29      OUTCH   JMP OUTEEE
+   0373   7e 04 15      INCH    JMP INEEE
+                        ;
+                        ;   PRINT DATA POINTED AT BY X-REG
+   0376   8d f8         PDATA2  BSR OUTCH
+   0378   08                INX
+   0379   a6 00         PDATA1  LDAA    X
+   037b   81 04             CMPA    #4
+   037d   26 f7             BNE PDATA2
+   037f   39                RTS     ;STOP ON EOT
+                        
+                        * CHANGE MEMORY (M AAAA DD NN)
+   0380   8d be         CHANGE  BSR BADDR   ;BUILD ADDRESS
+   0382   ce 04 09      CHA51   LDX #MCL
+   0385   8d f2             BSR PDATA1  ;C/R L/F
+   0387   ce 00 fd          LDX #XHI
+   038a   8d 31             BSR OUT4HS  ;PRINT ADDRESS
+   038c   fe 00 fd          LDX XHI
+   038f   8d 2e             BSR OUT2HS  ;PRINT DATA (OLD)
+   0391   ff 00 fd          STX XHI ;SAVE DATA ADDRESS
+                            ;BSR INCH    ;INPUT ONE CHAR
+                            ;CMPA    #$20
+                            ;BNE CHA51   ;NOT SPACE
+   0394   8d b8             BSR BYTE    ;INPUT NEW DATA
+   0396   09                DEX
+   0397   a7 00             STAA    X   ;CHANGE MEMORY
+   0399   a1 00             CMPA    X
+   039b   27 e5             BEQ CHA51   ;DID CHANGE
+   039d   20 9a             BRA LOAD19  ;NOT CHANGED
+                        ;CHANGE BSR    BADDR    ;BUILD ADDRESS
+                        ;CHA52  BSR    OUTS     ;PRINT SPACE
+                        ;       BSR    OUT2HS
+                        ;       BSR    BYTE
+                        ;       DEX
+                        ;       ;JSR    SAV
+                        ;       STA A  X
+                        ;       CMP A  X
+                        ;       BEQ    CHK   ;MEMORY DID NOT CHANGE
+                        ;ADR    ;JSR    BAK 
+                        ;       ;INC    1,X
+                        ;       BSR    OUT4HS
+                        ;       BRA    CHA52
+                        ;CHK    BSR INCH    ;INPUT ONE CHAR
+                        ;       CMPA   #$1b
+                        ;       BEQ    EXT   ;EXIT
+                        ;       BRA    ADR
+                        ;EXT    JMP    CONTRL
+                        
+   039f   8d d2         INHEX   BSR INCH
+   03a1   80 30             SUBA    #$30
+   03a3   2b 98             BMI C1  ;NOT HEX
+   03a5   81 09             CMPA    #$09
+   03a7   2f 0a             BLE IN1HG
+   03a9   81 11             CMPA    #$11
+   03ab   2b 90             BMI C1  ;NOT HEX
+   03ad   81 16             CMPA    #$16
+   03af   2e 8c             BGT C1  ;NOT HEX
+   03b1   80 07             SUBA    #7
+   03b3   39            IN1HG   RTS
+                        ;
+                        ;   OUTPUT 2 HEX CHAR
+   03b4   a6 00         OUT2H   LDAA    0,X ;OUTPUT 2 HEX CHAR
+   03b6   8d aa         OUT2HA  BSR OUTHL   ;OUT LEFT HEX CHAR
+   03b8   a6 00             LDAA    0,X
+   03ba   08                INX
+   03bb   20 a9             BRA OUTHR   ;OUTPUT RIGHT HEX CHAR AND R
+                        ;
+                        ;   OUTPUT 2-4 HEX CHAR + SPACE
+   03bd   8d f5         OUT4HS  BSR OUT2H   ;OUTPUT 4 HEX CHAR + SPACE
+   03bf   8d f3         OUT2HS  BSR OUT2H   ;OUTPUT 2 HEX CHAR + SPACE
+                        ;
+                        ;   OUTPUT SPACE
+   03c1   86 20         OUTS    LDAA    #$20    ;SPACE
+   03c3   20 ab             BRA OUTCH   ;(BSR & RTS)
+                        ;
+                        ;   ENTER POWER  ON SEQUENCE
+   03c5                 START   EQU *
+   03c5   9e f3             LDS $00F3
+                            ;STS $00F3;SP  ;INZ TARGET'S STACK PNTR
+                        ;
+                        ;   ACIA INITIALIZE
+   03c7   86 03             LDAA    #$03    ;RESET CODE
+   03c9   b7 f0 00          STAA    ACIACS
+   03cc   01                NOP
+   03cd   01                NOP
+   03ce   01                NOP
+   03cf   86 15             LDAA    #$15    ;8N1 NON-INTERRUPT
+   03d1   b7 f0 00              STAA    ACIACS
+                        ;
+                        ;   COMMAND CONTROL
+                        ;   COMMAND CONTROL
+   03d4   8e 01 33      CONTRL  LDS #STACK  ;SET CONTRL STACK POINTER
+   03d7   ce 04 09          LDX #MCL
+   03da   8d 9d             BSR PDATA1  ;PRINT DATA STRING
+   03dc   8d 95             BSR INCH    ;READ CHARACTER
+   03de   16                TAB
+   03df   8d e0             BSR OUTS    ;PRINT SPACE
+   03e1   c1 4c             CMPB    #'L'
+   03e3   26 03             BNE *+5
+   03e5   7e 03 03          JMP LOAD
+   03e8   c1 4d             CMPB    #'M'
+   03ea   27 94             BEQ CHANGE
+   03ec   c1 52             CMPB    #'R'
+   03ee   27 03             BEQ PRINT   ;STACK
+                        ;    CMPB    #'P'
+                        ;    BEQ PUNCH   ;PRINT/PUNCH
+                            ;CMPB    #'G'
+                            ;BNE CONTRL
+                            ;LDS SP  ;RESTORE PGM'S STACK PTR
+   03f0   7e 03 d4          JMP CONTRL
+                            ;RTI ;GO
+                            
+                        ;   PRINT CONTENTS OF STACK
+   03f3   fe 00 f9      PRINT   LDX SP
+   03f6   08                INX
+   03f7   8d c6             BSR OUT2HS  ;CONDITION CODES
+   03f9   8d c4             BSR OUT2HS  ;ACC-B
+   03fb   8d c2             BSR OUT2HS  ;ACC-A
+   03fd   8d be             BSR OUT4HS  ;X-REG
+   03ff   8d bc             BSR OUT4HS  ;P-COUNTER
+   0401   ce 00 f9          LDX #SP
+   0404   8d b7             BSR OUT4HS  ;STACK POINTER
+   0406   7e 03 d4      C2  JMP CONTRL
+                        ;
+   0409   0d 0a 2a 04   MCL FCB $D,$A,'*',4
+                        ;
+                        ;   SAVE X REGISTER
+   040d   ff 01 03      SAV STX XTEMP
+   0410   39                RTS
+   0411   ce 01 03      BAK LDX #XTEMP
+   0414   39                RTS
+                        ;
+                        ;   INPUT ONE CHAR INTO A-REGISTER
+   0415                 INEEE
+   0415   8d f6             BSR SAV
+   0417   b6 f0 00      IN1 LDAA    ACIACS
+   041a   47                ASRA
+   041b   24 fa             BCC IN1 ;RECEIVE NOT READY
+   041d   b6 f0 03          LDAA    STRAPS  ;INPUT CHARACTER
+   0420   84 7f             ANDA    #$7F    ;RESET PARITY BIT
+   0422   81 7f             CMPA    #$7F
+   0424   27 f1             BEQ IN1 ;IF RUBOUT, GET NEXT CHAR
+   0426   8d 01             BSR OUTEEE
+   0428   39                RTS
+                        ;
+                        ;   OUTPUT ONE CHAR 
+   0429   36            OUTEEE  PSH A
+   042a   b6 f0 00      OUTEEE1 LDA A   ACIACS
+   042d   47                ASR A
+   042e   47                ASR A
+   042f   24 f9             BCC OUTEEE1
+   0431   32                PUL A
+   0432   b7 f0 01          STA A   ACIADA
+   0435   39                RTS
+                        ;
+                        ;   VECTOR
+   fffe                     ORG $FFFE
+                        ;    FDB IO
+                        ;    FDB SFE
+                        ;    FDB POWDWN
+   fffe   03 c5             FDB START
+                        
+   00f1                         ORG    VAR
+   00f1                 IOV     RMB    2         ;IO INTERRUPT POINTER
+   00f3                 BEGA    RMB    2         ;BEGINING ADDR PRINT/PUNCH
+   00f5                 ENDA    RMB    2         ;ENDING ADDR PRINT/PUNCH
+   00f7                 NIO     RMB    2         ;NMI INTERRUPT POINTER
+   00f9                 SP      RMB    1         ;S-HIGH
+   00fa                         RMB    1         ;S-LOW
+   00fb                 CKSM    RMB    1         ;CHECKSUM
+                        
+   00fc                 BYTECT  RMB    1         ;BYTE COUNT
+   00fd                 XHI     RMB    1         ;XREG HIGH
+   00fe                 XLOW    RMB    1         ;XREG LOW
+   00ff                 TEMP    RMB    1         ;CHAR COUNT (INADD)
+   0100                 TW      RMB    2         ;TEMP
+   0102                 MCONT   RMB    1         ;TEMP
+   0103                 XTEMP   RMB    2         ;X-REG TEMP STORAGE
+   0105                         RMB    46
+   0133                 STACK   RMB    1         ;STACK POINTER
+                        
+   0134                         END
+f000  ACIACS        f001  ACIADA        0340  BADDR         0411  BAK       
+00f3  BEGA          034e  BYTE          00fc  BYTECT        033d  C1        
+0406  C2            0382  CHA51         0380  CHANGE        00fb  CKSM      
+03d4  CONTRL        00f5  ENDA          0417  IN1           03b3  IN1HG     
+0373  INCH          0415  INEEE         039f  INHEX         00f1  IOV       
+0303  LOAD          0328  LOAD11        0334  LOAD15        0339  LOAD19    
+033d  LOAD21        030c  LOAD3         0409  MCL           0102  MCONT     
+00f7  NIO           03b4  OUT2H         03b6  OUT2HA        03bf  OUT2HS    
+03bd  OUT4HS        0370  OUTCH         0429  OUTEEE        042a  OUTEEE1   
+0362  OUTHL         0366  OUTHR         03c1  OUTS          0379  PDATA1    
+0376  PDATA2        03f3  PRINT         040d  SAV           00f9  SP        
+0133  STACK         03c5  START         f003  STRAPS        00ff  TEMP      
+0100  TW            00f1  VAR           00fd  XHI           00fe  XLOW      
+0103  XTEMP         
+
