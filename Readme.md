@@ -18,3 +18,11 @@ How to use this repo's asm and s19
     a68 mikb09.asm -l mikb09.lst -s mikb09.s19
 <BR>
 Enjoy!<BR>
+##Update
+mikb091 is P command available.<BR>
+if you use this, please set BEGA and ENDA on STack. BEGA is on 0002 and ENDA is on 0004.<BR>
+Unfortunately if you set these with M command, if protected area, it cloud not do.<BR>
+So, I moved Vars on EQU 0000. I test M command could change memory value.<BR>
+If vars on rom area(ex: FFFE) it cloud not be change, because picobug wipe and paste it.<BR>
+Enjoy!
+
