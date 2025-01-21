@@ -26,7 +26,7 @@ if you use this, please set BEGA and ENDA on STack. BEGA is on 0002 and ENDA is 
 Unfortunately if you set these with M command, if protected area, it cloud not do.<BR>
 So, I moved Vars on EQU 0000. I test M command could change memory value.<BR>
 If vars on rom area(ex: FFFE) it cloud not be change, because picobug wipe and paste it.<BR>
-G command not yet...
+G command not yet...<BR><BR>
 [Update 20250121 18:06]<BR>
 mikb092 is J command available.<BR>
 implementation (brief): <BR>
