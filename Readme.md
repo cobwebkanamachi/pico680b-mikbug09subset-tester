@@ -41,6 +41,7 @@ upload this s19
 upload echoback's s19
 *J 0100
 echoback works.</PRE>
+No Warranty, esp. SWI, Hardware interrupt would be tainted(because picobug's stack structure is not same with mikbug).<BR>
 Enjoy!<BR>
 
 
