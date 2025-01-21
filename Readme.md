@@ -4,6 +4,9 @@ picobug is bellow.
 https://github.com/simple-circuit/picobug
 (I love this Altair 680b simulator with prom monitor clone)<BR>
 
+used mikbug source code was got here.
+https://tms9918.hatenablog.com/entry/2023/03/27/212510
+The original mikbug is on this repo's about link.
 I try several times to make mikbug and minibug work on picobug. But I did not complete because picobug's ino's Stack frame was not same with swtpc or mikbug 's one.<BR>
 I have no time to complete these work all in short period.
 So this made for testing mikbug's routines on picobug memory.
