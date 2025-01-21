@@ -17,21 +17,30 @@ How to use this repo's asm and s19
 6. Assemble command
     a68 mikb09.asm -l mikb09.lst -s mikb09.s19
 <BR>
-Enjoy!<BR>
-[Update 20250119 19:28]
+[Update 20250119 19:28]<BR>
 mikb091 is P command available.<BR>
 if you use this, please set BEGA and ENDA on STack. BEGA is on 0002 and ENDA is on 0004.<BR>
 Unfortunately if you set these with M command, if protected area, it cloud not do.<BR>
 So, I moved Vars on EQU 0000. I test M command could change memory value.<BR>
 If vars on rom area(ex: FFFE) it cloud not be change, because picobug wipe and paste it.<BR>
 G command not yet...
-[Update 20250121 18:06]
+[Update 20250121 18:06]<BR>
 mikb092 is J command available.<BR>
 implementation (brief): <BR>
 <PRE>
 BSR BADDR
 JMP X
 </PRE>
-inspired with https://deramp.com/downloads/mfe_archive/010-S100%20Computers%20and%20Boards/00-MITS/99-Non-S100%20Systems/Altair%20680%20family/11-Altair%20680b/680b%20Manual/Altair%20680b%2099-%20System%20Monitor%20Manual.pdf
-Enjoy!
+tested with https://github.com/cobwebkanamachi/pico680b-echoback's s19 file (L then J 0100).<BR>
+inspired with https://deramp.com/downloads/mfe_archive/010-S100%20Computers%20and%20Boards/00-MITS/99-Non-S100%20Systems/Altair%20680%20family/11-Altair%20680b/680b%20Manual/Altair%20680b%2099-%20System%20Monitor%20Manual.pdf<BR>
+TEST seq.<BR><PRE>
+>L
+upload this s19
+>J 0300
+*L
+upload echoback's s19
+*J 0100
+echoback works.</PRE>
+Enjoy!<BR>
+
 
